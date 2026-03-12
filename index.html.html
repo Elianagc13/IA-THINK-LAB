@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI T.H.I.N.K</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cyan: #00D9FF;
+    --violet: #7C3AED;
+    --dark: #060B14;
+    --card: #0D1526;
+    --border: rgba(0,217,255,0.15);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--dark);
+    color: #C8D6E5;
+    margin: 0;
+  }
+
+  h1,h2,h3,h4,h5 { font-family: 'Syne', sans-serif; }
+
+  /* ── NOISE OVERLAY ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+  }
+
+  /* ── GRID LINES ── */
+  .grid-bg {
+    background-image:
+      linear-gradient(rgba(0,217,255,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,217,255,0.04) 1px, transparent 1px);
+    background-size: 60px 60px;
+  }
+
+  /* ── GLOW ACCENTS ── */
+  .glow-cyan { text-shadow: 0 0 30px rgba(0,217,255,0.6); }
+  .glow-box { box-shadow: 0 0 0 1px var(--border), 0 0 40px rgba(0,217,255,0.05); }
+  .glow-box:hover { box-shadow: 0 0 0 1px rgba(0,217,255,0.4), 0 0 60px rgba(0,217,255,0.12); }
+
+  /* ── HERO ── */
+  #hero {
+    position: relative;
+    width: 100%;
+    padding-top: 60px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: var(--dark);
+    overflow: hidden;
+  }
+  #hero img.banner-img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  #hero .hero-overlay { display: none; }
+  #hero .hero-content {
+    position: relative; z-index: 2;
+    text-align: center;
+    padding: 2.5rem 2rem;
+    width: 100%;
+    background: linear-gradient(to bottom, rgba(6,11,20,0.0), var(--dark));
+    margin-top: -4px;
+  }
+
+  /* ── SECTION TITLE ── */
+  .section-label {
+    display: inline-block;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--cyan);
+    border: 1px solid var(--border);
+    padding: 0.35rem 1rem;
+    border-radius: 999px;
+    margin-bottom: 1.5rem;
+  }
+
+  /* ── THINK CARDS ── */
+  .think-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem 1.5rem;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .think-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--cyan), var(--violet));
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .think-card:hover::before { opacity: 1; }
+  .think-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 60px rgba(0,217,255,0.1);
+  }
+  .think-letter {
+    font-family: 'Syne', sans-serif;
+    font-size: 3rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--cyan), var(--violet));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1;
+    margin-bottom: 0.5rem;
+  }
+
+  /* ── STEP NUMBER ── */
+  .step-num {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--cyan), var(--violet));
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Syne', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--dark);
+    flex-shrink: 0;
+  }
+
+  /* ── PAIN CARD ── */
+  .pain-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+  }
+  .pain-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 60px rgba(124,58,237,0.15);
+  }
+  .pain-card-header {
+    height: 160px;
+    position: relative;
+    overflow: hidden;
+  }
+  .pain-card-header img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    transition: transform 0.4s ease;
+  }
+  .pain-card:hover .pain-card-header img { transform: scale(1.06); }
+  .pain-card-header-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(to bottom, rgba(6,11,20,0.2), rgba(6,11,20,0.8));
+  }
+  .pain-card-header-title {
+    position: absolute; bottom: 1rem; left: 1.25rem;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: #fff;
+  }
+  .pain-card-body { padding: 1.5rem; }
+
+  /* ── PROMPTS ── */
+  details.prompt-details {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    transition: all 0.3s;
+  }
+  details.prompt-details[open] {
+    border-color: rgba(0,217,255,0.35);
+  }
+  details.prompt-details summary {
+    padding: 1.25rem 1.75rem;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1.05rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: #E2EAF4;
+    list-style: none;
+    user-select: none;
+  }
+  details.prompt-details summary::-webkit-details-marker { display:none; }
+  details.prompt-details summary .arrow {
+    margin-left: auto;
+    transition: transform 0.3s;
+    color: var(--cyan);
+    font-size: 1.2rem;
+  }
+  details.prompt-details[open] summary .arrow { transform: rotate(90deg); }
+  .prompt-inner { padding: 0 1.75rem 1.75rem; }
+  .prompt-box {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(0,217,255,0.1);
+    border-radius: 10px;
+    padding: 1.25rem;
+    font-size: 0.8rem;
+    color: #9BAFC4;
+    white-space: pre-line;
+    line-height: 1.7;
+    font-family: 'DM Sans', monospace;
+  }
+  .copy-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    padding: 0.5rem 1.25rem;
+    background: linear-gradient(135deg, var(--cyan), var(--violet));
+    color: var(--dark);
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.8rem;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    margin-bottom: 1.5rem;
+  }
+  .copy-btn:hover { opacity: 0.85; }
+
+  /* ── PHASE BADGE ── */
+  .phase-badge {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+    background: linear-gradient(135deg, rgba(0,217,255,0.15), rgba(124,58,237,0.15));
+    border: 1px solid rgba(0,217,255,0.3);
+    color: var(--cyan);
+    margin-bottom: 0.75rem;
+    font-family: 'Syne', sans-serif;
+  }
+
+  /* ── DIVIDER LINE ── */
+  .fancy-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+    opacity: 0.3;
+    margin: 0 auto;
+    max-width: 600px;
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: rgba(6,11,20,0.85);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+    padding: 0.9rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .nav-logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.2rem;
+    color: #fff;
+    letter-spacing: 0.05em;
+  }
+  .nav-logo span { color: var(--cyan); }
+  .nav-links { display: flex; gap: 2rem; }
+  .nav-links a {
+    font-size: 0.85rem;
+    color: #8FA3B8;
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--cyan); }
+
+  /* ── PERSON PILL ── */
+  .person-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(0,217,255,0.06);
+    border: 1px solid rgba(0,217,255,0.12);
+    border-radius: 999px;
+    padding: 0.3rem 0.85rem 0.3rem 0.3rem;
+    font-size: 0.82rem;
+    color: #9BAFC4;
+    margin: 0.25rem;
+  }
+  .person-avatar {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--cyan), var(--violet));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--dark);
+    font-family: 'Syne', sans-serif;
+    flex-shrink: 0;
+  }
+
+  /* ── FEEDBACK ARROWS ── */
+  .feedback-arrow {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--cyan);
+    font-weight: 600;
+  }
+
+  /* ── SCROLL REVEAL ── */
+  .reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+</style>
+</head>
+<body class="grid-bg">
+
+<!-- ── NAV ── -->
+<nav>
+  <div class="nav-logo">AI <span>T.H.I.N.K</span></div>
+  <div class="nav-links">
+    <a href="#metodologia">Metodología</a>
+    <a href="#pains">Grupos</a>
+    <a href="#prompts">Prompts</a>
+  </div>
+</nav>
+
+<!-- ── HERO ── -->
+<section id="hero">
+  <img
+    class="banner-img"
+    src="banner-think.png"
+    alt="AI THINK Banner"
+    onerror="this.style.display='none'; document.querySelector('#hero .hero-overlay').style.background='linear-gradient(135deg,#060B14 0%,#0D1526 50%,#060B14 100%)'; document.querySelector('#hero-fallback').style.display='flex';"
+  >
+  <div class="hero-overlay"></div>
+
+  <!-- Fallback visual (hidden by default, shown if no image) -->
+  <div id="hero-fallback" style="display:none; position:absolute; inset:0; align-items:center; justify-content:center; z-index:1;">
+    <div style="position:absolute; width:600px; height:600px; border-radius:50%; background:radial-gradient(circle, rgba(0,217,255,0.08) 0%, transparent 70%); top:50%; left:50%; transform:translate(-50%,-50%);"></div>
+    <div style="position:absolute; width:300px; height:300px; border-radius:50%; background:radial-gradient(circle, rgba(124,58,237,0.12) 0%, transparent 70%); top:30%; left:60%; transform:translate(-50%,-50%);"></div>
+  </div>
+
+  <div class="hero-content" style="z-index:2;">
+    <div class="section-label">Evento de Innovación</div>
+    <h1 style="font-size:clamp(3rem,8vw,7rem); font-weight:800; color:#fff; line-height:1; margin-bottom:1.5rem;">
+      AI <span style="background:linear-gradient(135deg,var(--cyan),var(--violet)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;">T.H.I.N.K</span>
+    </h1>
+    <p style="font-size:1.1rem; color:#8FA3B8; max-width:500px; margin:0 auto 2.5rem; line-height:1.7;">
+      Una metodología estructurada en 5 etapas para resolver problemas reales con el poder de la Inteligencia Artificial.
+    </p>
+    <a href="#metodologia" style="display:inline-flex; align-items:center; gap:0.5rem; background:linear-gradient(135deg,var(--cyan),var(--violet)); color:var(--dark); font-family:'Syne',sans-serif; font-weight:700; padding:0.9rem 2.5rem; border-radius:999px; text-decoration:none; font-size:0.95rem; transition:opacity 0.2s;">
+      Explorar metodología ↓
+    </a>
+  </div>
+</section>
+
+<!-- ── PRERREQUISITOS ── -->
+<section class="py-24 px-6" style="background:var(--dark);">
+  <div class="max-w-5xl mx-auto">
+
+    <div class="text-center mb-16 reveal">
+      <div class="section-label">Antes de comenzar</div>
+      <h2 style="font-size:2.5rem; font-weight:800; color:#fff; margin:0;">Prerrequisitos del laboratorio</h2>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-8">
+
+      <div class="think-card glow-box reveal" style="display:flex; gap:1.5rem; align-items:flex-start;">
+        <div class="step-num">1</div>
+        <div>
+          <h3 style="font-size:1.1rem; font-weight:700; color:#fff; margin-bottom:0.75rem;">Crear proyecto en ChatGPT</h3>
+          <ul style="list-style:none; padding:0; space-y:0.5rem;">
+            <li style="padding:0.4rem 0; border-bottom:1px solid rgba(255,255,255,0.05); font-size:0.9rem;">→ Entrar a ChatGPT</li>
+            <li style="padding:0.4rem 0; border-bottom:1px solid rgba(255,255,255,0.05); font-size:0.9rem;">→ Crear un nuevo proyecto</li>
+            <li style="padding:0.4rem 0; border-bottom:1px solid rgba(255,255,255,0.05); font-size:0.9rem;">→ Nombrarlo <strong style="color:var(--cyan);">AI THINK LAB</strong></li>
+            <li style="padding:0.4rem 0; font-size:0.9rem;">→ Usar ese proyecto durante todo el laboratorio</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="think-card glow-box reveal" style="display:flex; gap:1.5rem; align-items:flex-start;">
+        <div class="step-num">2</div>
+        <div>
+          <h3 style="font-size:1.1rem; font-weight:700; color:#fff; margin-bottom:0.75rem;">Crear cuenta en Freepik</h3>
+          <p style="font-size:0.9rem; line-height:1.7; margin-bottom:1.25rem;">
+            Durante el laboratorio usaremos herramientas de generación visual con IA.
+          </p>
+          <a href="https://www.freepik.com/" target="_blank"
+            style="display:inline-flex; align-items:center; gap:0.5rem; color:var(--cyan); font-weight:600; font-size:0.9rem; text-decoration:none; border-bottom:1px solid rgba(0,217,255,0.3); padding-bottom:2px;">
+            Crear cuenta en Freepik →
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<div class="fancy-divider"></div>
+
+<!-- ── METODOLOGÍA ── -->
+<section id="metodologia" class="py-24 px-6" style="background:var(--dark);">
+  <div class="max-w-6xl mx-auto text-center">
+
+    <div class="reveal">
+      <div class="section-label">Framework</div>
+      <h2 style="font-size:2.5rem; font-weight:800; color:#fff; margin-bottom:1rem;">Metodología AI – THINK</h2>
+      <p style="color:#8FA3B8; max-width:520px; margin:0 auto 4rem; line-height:1.7;">
+        Cinco fases que convierten problemas reales en soluciones prototipadas, validadas y listas para iterar.
+      </p>
+    </div>
+
+    <!-- Image strip -->
+    <div class="reveal" style="border-radius:16px; overflow:hidden; height:220px; margin-bottom:4rem; position:relative;">
+      <img src="https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1400&q=80"
+        alt="Technology Network"
+        style="width:100%; height:100%; object-fit:cover; object-position:center;">
+      <div style="position:absolute; inset:0; background:linear-gradient(90deg, var(--dark) 0%, transparent 20%, transparent 80%, var(--dark) 100%);"></div>
+      <div style="position:absolute; inset:0; background:linear-gradient(to bottom, transparent 40%, rgba(6,11,20,0.8) 100%);"></div>
+    </div>
+
+    <div class="grid md:grid-cols-5 gap-5">
+
+      <div class="think-card reveal">
+        <div class="think-letter">T</div>
+        <h4 style="font-weight:700; color:#fff; margin-bottom:0.5rem;">Tune</h4>
+        <p style="font-size:0.82rem; color:#7A92A8; line-height:1.65;">Comprender el Pain que queremos resolver con sus causas y matices.</p>
+      </div>
+
+      <div class="think-card reveal" style="transition-delay:0.08s">
+        <div class="think-letter">H</div>
+        <h4 style="font-weight:700; color:#fff; margin-bottom:0.5rem;">Hypothesis</h4>
+        <p style="font-size:0.82rem; color:#7A92A8; line-height:1.65;">Generar hipótesis que puedan resolver el problema.</p>
+      </div>
+
+      <div class="think-card reveal" style="transition-delay:0.16s">
+        <div class="think-letter">I</div>
+        <h4 style="font-weight:700; color:#fff; margin-bottom:0.5rem;">Implement</h4>
+        <p style="font-size:0.82rem; color:#7A92A8; line-height:1.65;">Convertir ideas en prototipos funcionales utilizando la IA como desarrollador.</p>
+      </div>
+
+      <div class="think-card reveal" style="transition-delay:0.24s">
+        <div class="think-letter">N</div>
+        <h4 style="font-weight:700; color:#fff; margin-bottom:0.5rem;">Network</h4>
+        <p style="font-size:0.82rem; color:#7A92A8; line-height:1.65;">Compartir el prototipo con una primera red para recoger opiniones.</p>
+      </div>
+
+      <div class="think-card reveal" style="transition-delay:0.32s">
+        <div class="think-letter">K</div>
+        <h4 style="font-weight:700; color:#fff; margin-bottom:0.5rem;">Knowledge</h4>
+        <p style="font-size:0.82rem; color:#7A92A8; line-height:1.65;">Analizar el feedback para decidir: continuar, iterar o descartar.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<div class="fancy-divider"></div>
+
+<!-- ── GRUPOS / PAINS ── -->
+<section id="pains" class="py-24 px-6" style="background:var(--dark);">
+  <div class="max-w-6xl mx-auto">
+
+    <div class="text-center mb-16 reveal">
+      <div class="section-label">Participantes</div>
+      <h2 style="font-size:2.5rem; font-weight:800; color:#fff;">Grupos & Pains</h2>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-7">
+
+      <!-- Grupo 1 -->
+      <div class="pain-card reveal">
+        <div class="pain-card-header">
+          <img src="https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?w=800&q=80" alt="Green CO2">
+          <div class="pain-card-header-overlay"></div>
+          <div class="pain-card-header-title">Grupo 1 – Green CO₂ 🌱</div>
+        </div>
+        <div class="pain-card-body">
+          <p style="font-size:0.88rem; line-height:1.7; margin-bottom:1.25rem;">
+            <span style="color:var(--cyan); font-weight:600;">Reto:</span>
+            Propuesta de consultoría y solución tecnológica para medir, analizar y reducir consumo energético y emisiones de CO₂ en TI.
+          </p>
+          <div style="display:flex; flex-wrap:wrap; gap:0;">
+            <span class="person-pill"><span class="person-avatar">CC</span>Carolina Correa</span>
+            <span class="person-pill"><span class="person-avatar">DC</span>Diego Camacho</span>
+            <span class="person-pill"><span class="person-avatar">SS</span>Sebastian Silva</span>
+            <span class="person-pill"><span class="person-avatar">PF</span>Paola Fernandez</span>
+            <span class="person-pill"><span class="person-avatar">HA</span>Hector Asprilla</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Grupo 2 -->
+      <div class="pain-card reveal">
+        <div class="pain-card-header">
+          <img src="https://images.unsplash.com/photo-1529400971008-f566de0e6dfc?w=800&q=80" alt="Expansión Internacional">
+          <div class="pain-card-header-overlay"></div>
+          <div class="pain-card-header-title">Grupo 2 – Expansión Internacional 🌎</div>
+        </div>
+        <div class="pain-card-body">
+          <p style="font-size:0.88rem; line-height:1.7; margin-bottom:1.25rem;">
+            <span style="color:var(--cyan); font-weight:600;">Reto:</span>
+            Crear un producto o servicio que permita la expansión internacional de SAS.
+          </p>
+          <div style="display:flex; flex-wrap:wrap;">
+            <span class="person-pill"><span class="person-avatar">EP</span>Emilse Palacios</span>
+            <span class="person-pill"><span class="person-avatar">KH</span>Kevin Hernandez</span>
+            <span class="person-pill"><span class="person-avatar">SC</span>Sofia Carrero</span>
+            <span class="person-pill"><span class="person-avatar">CP</span>Cristian Patiño</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Grupo 3 -->
+      <div class="pain-card reveal">
+        <div class="pain-card-header">
+          <img src="https://images.unsplash.com/photo-1551434678-e076c223a692?w=800&q=80" alt="Transformación Tecnológica">
+          <div class="pain-card-header-overlay"></div>
+          <div class="pain-card-header-title">Grupo 3 – Transformación Tecnológica 🚀</div>
+        </div>
+        <div class="pain-card-body">
+          <p style="font-size:0.88rem; line-height:1.7; margin-bottom:1.25rem;">
+            <span style="color:var(--cyan); font-weight:600;">Reto:</span>
+            ¿Cómo lograr que más colaboradores participen en el proceso de transformación hacia nube, modernización e IA?
+          </p>
+          <div style="display:flex; flex-wrap:wrap;">
+            <span class="person-pill"><span class="person-avatar">JV</span>Jessica Vanoy</span>
+            <span class="person-pill"><span class="person-avatar">AS</span>Andrés Sanchez</span>
+            <span class="person-pill"><span class="person-avatar">LG</span>Lina Garzon</span>
+            <span class="person-pill"><span class="person-avatar">AR</span>Andres Rodriguez</span>
+            <span class="person-pill"><span class="person-avatar">DS</span>David Salamanca</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Grupo 4 -->
+      <div class="pain-card reveal">
+        <div class="pain-card-header">
+          <img src="https://images.unsplash.com/photo-1677442135703-1787eea5ce01?w=800&q=80" alt="Upsell IA">
+          <div class="pain-card-header-overlay"></div>
+          <div class="pain-card-header-title">Grupo 4 – Upsell Backup hacia IA 🤖</div>
+        </div>
+        <div class="pain-card-body">
+          <p style="font-size:0.88rem; line-height:1.7; margin-bottom:1.25rem;">
+            <span style="color:var(--cyan); font-weight:600;">Reto:</span>
+            ¿Qué tendría que pasar para que un cliente que hoy compra backup confíe en SAS para modernización o IA?
+          </p>
+          <div style="display:flex; flex-wrap:wrap;">
+            <span class="person-pill"><span class="person-avatar">SU</span>Silvio Ubieda</span>
+            <span class="person-pill"><span class="person-avatar">AL</span>Ally Lopez</span>
+            <span class="person-pill"><span class="person-avatar">PP</span>Paula Pastos</span>
+            <span class="person-pill"><span class="person-avatar">CT</span>Carlos Tabares</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<div class="fancy-divider"></div>
+
+<!-- ── PROMPTS ── -->
+<section id="prompts" class="py-24 px-6" style="background:var(--dark);">
+  <div class="max-w-4xl mx-auto">
+
+    <div class="text-center mb-16 reveal">
+      <div class="section-label">Recursos</div>
+      <h2 style="font-size:2.5rem; font-weight:800; color:#fff;">Prompts de la metodología</h2>
+      <p style="color:#8FA3B8; max-width:460px; margin:1rem auto 0; line-height:1.7;">
+        Copia cada prompt, personaliza los campos marcados con <strong style="color:var(--cyan);">xxxxxxx</strong> y pégalo en ChatGPT.
+      </p>
+    </div>
+
+    <!-- Image strip -->
+    <div class="reveal" style="border-radius:16px; overflow:hidden; height:180px; margin-bottom:2.5rem; position:relative;">
+      <img src="https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=1200&q=80"
+        alt="AI Prompts"
+        style="width:100%; height:100%; object-fit:cover; object-position:center 40%;">
+      <div style="position:absolute; inset:0; background:linear-gradient(90deg, var(--dark) 0%, transparent 30%, transparent 70%, var(--dark) 100%);"></div>
+      <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center;">
+        <span style="font-family:'Syne',sans-serif; font-size:1.4rem; font-weight:800; color:#fff; text-shadow:0 2px 20px rgba(0,0,0,0.8);">Tus herramientas para cada fase</span>
+      </div>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:1rem;">
+
+      <!-- TUNE -->
+      <details class="prompt-details reveal">
+        <summary>
+          <span class="phase-badge">T</span>
+          Fase T – TUNE
+          <span class="arrow">›</span>
+        </summary>
+        <div class="prompt-inner">
+          <div style="margin-bottom:2rem;">
+            <h4 style="font-weight:700; color:#fff; margin-bottom:0.75rem; font-family:'Syne',sans-serif;">Prompt 1</h4>
+            <div class="prompt-box" id="p1">Estoy realizando un ejercicio de innovación con IA llamado Al T.H.I.N.K., una metodología
+estructurada en 5 etapas para abordar problemas con apoyo de la Inteligencia Artificial. 
+
+En este momento me encuentro en la fase T - TUNE, que busca comprender mejor el "pain" que
+queremos resolver, identificar segmentos de usuarios clave y escuchar sus opiniones reales en
+internet para tener datos auténticos en lugar de suposiciones. 
+
+El "pain" y público al que me dirijo es:
+xxxxxxxxxxxxxxxx
+
+Quiero que me ayudes a identificar "queries" de búsqueda que pueda ejecutar en Google, Bing, X
+(Twitter), así como otras redes sociales y comunidades online para encontrar los usuarios a los que
+me quiero dirigir y poder encontrar debates, comentarios y opiniones reales de los usuarios sobre
+este tema. 
+
+Importante:
+• Además de los términos de búsqueda, si es posible devuélveme URLs como https://x.com/
+search?q= o http://google.com/search?q= con la query incluida para que pueda simplemente
+pulsar y acceder a la información. Para plataformas que no lo soporten, explícame cómo
+realizar la búsqueda.
+• En este momento quiero primar la cantidad frente a la calidad: necesito decenas o cientos de
+opiniones.
+• Piensa en variaciones de búsqueda que reflejen cómo la gente realmente escribe o habla del
+tema en conversaciones o publicaciones.
+• Incluye tanto términos en español como en inglés si crees que es relevante para captar más
+información.</div>
+            <button class="copy-btn" onclick="copiar('p1')">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+              Copiar Prompt
+            </button>
+          </div>
+          <div>
+            <h4 style="font-weight:700; color:#fff; margin-bottom:0.75rem; font-family:'Syne',sans-serif;">Prompt 2</h4>
+            <div class="prompt-box" id="p2">Estoy realizando un ejercicio de innovación con IA llamado Al T.H.I.N.K., una metodología estructurada en
+5 etapas para abordar problemas con apoyo de la Inteligencia Artificial.
+En este momento me encuentro en la fase T - TUNE, que busca comprender mejor el "pain" que queremos
+resolver, identificar segmentos de usuarios clave y escuchar sus opiniones reales en internet para tener
+datos auténticos en lugar de suposiciones. 
+
+El "pain" y público al que me dirijo es:
+xxxxxxxxxxxxxxxxx
+
+He recopilado una serie de comentarios, opiniones y reseñas procedentes de diversas fuentes y
+comunidades online sobre este tema. 
+
+Tareas que debes realizar:
+1. Organiza la información agrupando los comentarios que expresen ideas similares o recurrentes.
+2. Identifica los principales problemas, frustraciones y deseos que se repiten con frecuencia.
+3. Crea una tabla resumen con los diferentes segmentos o grupos de personas que has identificado.
+4. Redacta un resumen estructurado en al menos 4 párrafos que describa la visión general de esta
+audiencia respecto al tema. 
+
+A continuación, te proporcionaré los comentarios recopilados:
+xxxxxxxxxxxxxxxxx</div>
+            <button class="copy-btn" onclick="copiar('p2')">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+              Copiar Prompt
+            </button>
+          </div>
+        </div>
+      </details>
+
+      <!-- HYPOTHESIS -->
+      <details class="prompt-details reveal">
+        <summary>
+          <span class="phase-badge">H</span>
+          Fase H – HYPOTHESIS
+          <span class="arrow">›</span>
+        </summary>
+        <div class="prompt-inner">
+          <div style="margin-bottom:2rem;">
+            <h4 style="font-weight:700; color:#fff; margin-bottom:0.75rem; font-family:'Syne',sans-serif;">Prompt 3</h4>
+            <div class="prompt-box" id="p3">Estoy realizando un ejercicio de innovación con IA llamado Al T.H.I.N.K., una metodología estructurada en 5
+etapas para abordar problemas con apoyo de la Inteligencia Artificial. 
+
+En este momento me encuentro en la fase H - HYPOTHESIS, que busca comprender a los usuarios a un nivel
+más profundo y construir perfiles de "User Personas" basados en la información real recopilada en la fase
+anterior. 
+
+El "pain" y público al que me dirijo es:
+xxxxxxxxxxxxxxxxxx
+
+Tareas que debes realizar:
+1. Crea 4 perfiles completos de User Personas que representen a los diferentes tipos de usuarios
+identificados. Cada perfil debe incluir:
+• Nombre y edad ficticios (pero realistas y representativos).
+• Ubicación o contexto geográfico relevante.
+• Situación profesional y personal.
+• Frustraciones y problemas más comunes que enfrentan.
+• Comportamiento digital: qué plataformas o recursos suelen utilizar para informarse y resolver
+problemas. 
+
+IMPORTANTE:
+• Cada User Persona debe ser coherente con los insights obtenidos en la fase T - TUNE, pero con
+suficiente variabilidad para reflejar diferentes segmentos dentro del público objetivo.
+• Usa un tono natural y realista, como si estuvieras describiendo a personas reales.
+• Si es relevante, añade detalles sobre su personalidad, hábitos o forma de pensar para hacer los perfiles
+más completos.
+• Si detectas un patrón atípico pero interesante dentro de los datos previos, destácalo en un User Persona
+específico.</div>
+            <button class="copy-btn" onclick="copiar('p3')">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+              Copiar Prompt
+            </button>
+          </div>
+          <div style="margin-bottom:2rem;">
+            <h4 style="font-weight:700; color:#fff; margin-bottom:0.75rem; font-family:'Syne',sans-serif;">Prompt 4</h4>
+            <div class="prompt-box" id="p4">Ahora necesito que generes una descripción detallada en inglés de cada User Persona,
+optimizada para su uso en una IA de generación de imágenes realistas.
+
+Instrucciones: 
+
+Para cada User Persona, proporciona una descripción de retrato altamente detallada en inglés,
+incluyendo:
+• Edad, género y rasgos faciales.
+• Estilo de vestimenta (basado en su profesión, estilo de vida o personalidad).
+• Expresión y postura.
+• Fondo de la imagen.
+• Iluminación y realismo.
+• Formato y estilo de imagen: photorealistic, ultra-detailed, portrait shot, cinematic, 8K resolution.</div>
+            <button class="copy-btn" onclick="copiar('p4')">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+              Copiar Prompt
+            </button>
+          </div>
+          <div style="margin-bottom:2rem;">
+            <h4 style="font-weight:700; color:#fff; margin-bottom:0.75rem; font-family:'Syne',sans-serif;">Prompt 5</h4>
+            <div class="prompt-box" id="p5">Estoy realizando un ejercicio de innovación con IA llamado Al T.H.I.N.K., una metodología estructurada en
+5 etapas para abordar problemas con apoyo de la Inteligencia Artificial. 
+
+En este momento me encuentro en la fase H - HYPOTHESIS.
+
+El "pain" y público al que me dirijo es:
+xxxxxxxxxxxxxxxxxx
+
+Objetivo:
+Para cada User Persona, quiero que plantees ideas concretas y realistas que puedan resolver sus
+principales pains y mejorar su experiencia. Las ideas deben estar alineadas con los
+hallazgos obtenidos en la fase anterior y con la información contextual disponible. 
+
+Instrucciones:
+1. Para cada User Persona, propón 3 a 5 ideas de solución que respondan a sus necesidades y
+frustraciones.
+2. Relaciónalas con los insights obtenidos en los comentarios y datos previos.
+3. Evita lo obvio: además de soluciones tradicionales, propón enfoques menos evidentes o
+convencionales.
+4. Haz que las ideas sean accionables y realistas.
+5. Si alguna idea tiene un enfoque innovador o disruptivo, destácala.</div>
+            <button class="copy-btn" onclick="copiar('p5')">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+              Copiar Prompt
+            </button>
+          </div>
+          <div style="margin-bottom:2rem;">
+            <h4 style="font-weight:700; color:#fff; margin-bottom:0.75rem; font-family:'Syne',sans-serif;">Prompt 6</h4>
+            <div class="prompt-box" id="p6">Estoy realizando un ejercicio de innovación con IA llamado Al T.H.I.N.K., metodología estructurada en 5
+etapas. Fase H - HYPOTHESIS.
+
+El "pain" y público al que me dirijo es:
+xxxxxxxxxxxxxxxxx
+
+Objetivo: Para cada una de las ideas que te proporcionaré, identifica competidores potenciales y
+artículos/posts relevantes sobre proyectos similares. 
+
+Instrucciones:
+1. Para cada idea, crea una tabla con: Competidores y Artículos/referencias.
+2. Si alguna idea parece especialmente novedosa, destácalo.
+3. Busca tanto en español como en inglés.
+4. Haz una recomendación final sobre qué idea tiene más potencial. 
+
+A continuación, te proporcionaré las ideas para análisis competitivo:
+1. xxxxxxxxxxxxxxxxxxxx
+2. xxxxxxxxxxxxxxxxxxxx
+3. xxxxxxxxxxxxxxxxxxxx
+4. xxxxxxxxxxxxxxxxxxxx
+5. xxxxxxxxxxxxxxxxxxxx</div>
+            <button class="copy-btn" onclick="copiar('p6')">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+              Copiar Prompt
+            </button>
+          </div>
+          <div>
+            <h4 style="font-weight:700; color:#fff; margin-bottom:0.75rem; font-family:'Syne',sans-serif;">Prompt 7</h4>
+            <div class="prompt-box" id="p7">Estoy en la fase H - HYPOTHESIS de la metodología Al T.H.I.N.K.
+
+El "pain" y público al que me dirijo es:
+xxxxxxxxxxxxxxxxxx
+
+Objetivo: A partir de la idea seleccionada, genera un documento con:
+1. Nombre de la idea (10 posibles nombres)
+2. Descripción breve (2-3 frases)
+3. Público objetivo (User Personas impactados)
+4. Propuesta de valor
+5. Funcionamiento general del Prototipo más simple posible
+
+Idea seleccionada:
+xxxxxxxxxxxxxxxx</div>
+            <button class="copy-btn" onclick="copiar('p7')">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+              Copiar Prompt
+            </button>
+          </div>
+        </div>
+      </details>
+
+      <!-- IMPLEMENT -->
+      <details class="prompt-details reveal">
+        <summary>
+          <span class="phase-badge">I</span>
+          Fase I – IMPLEMENT
+          <span class="arrow">›</span>
+        </summary>
+        <div class="prompt-inner">
+          <div class="prompt-box" id="p8">Estoy realizando un ejercicio de innovación con IA llamado Al T.H.I.N.K., una metodología estructurada en 5
+etapas para abordar problemas con apoyo de la Inteligencia Artificial.
+Estoy en la fase I - IMPLEMENT, donde vamos a crear una Landing Page moderna y optimizada para
+presentar nuestra solución. 
+
+El "pain" y público al que me dirijo es:
+xxxxxxxxxxxxxxxxxxxx 
+
+Necesito que generes el código de la Landing Page para la idea identificada "idea". La pagina debe tener las
+siguientes características: 
+
+Requisitos:
+1. Framework CSS: Usa TailwindCSS cargado desde el CDN.
+2. Diseño moderno y responsivo.
+3. Hero espectacular con mensaje impactante.
+4. No crees un formulario de contacto. Muestra el e-mail como punto de contacto.
+5. Usa las imágenes que te proporcionaré. 
+
+IMPORTANTE:
+• Todo en un solo archivo HTML.
+• No dejes partes sin crear.
+• Escribe toda la página en español.
+• Crea como mínimo 5 secciones completas.
+
+E-mail de contacto: XXXXXXXXXXXXXXXXXXXX
+URLs de imágenes:
+• xxxxxxxxxxxxxxxxxxxx
+• xxxxxxxxxxxxxxxxxxxx</div>
+          <button class="copy-btn" onclick="copiar('p8')">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+            Copiar Prompt
+          </button>
+        </div>
+      </details>
+
+      <!-- NETWORK -->
+      <details class="prompt-details reveal">
+        <summary>
+          <span class="phase-badge">N</span>
+          Fase N – NETWORK
+          <span class="arrow">›</span>
+        </summary>
+        <div class="prompt-inner">
+          <div class="prompt-box" id="p9">Estoy en la fase N - NETWORK de la metodología Al T.H.I.N.K., donde quiero dar a conocer mi idea y
+conseguir una primera red de personas que me proporcionen feedback real. 
+
+El "pain" y público al que me dirijo es:
+xxxxxxxxxxxxxxxxxx
+
+Tu objetivo es identificar los mejores lugares y estrategias para publicitar la idea de forma orgánica, sin
+inversión en publicidad. 
+
+Tareas:
+1. Sugerir los mejores lugares para difundir la idea (plataformas, foros, comunidades, podcasts).
+2. Proponer estrategias para atraer una primera red de usuarios sin gastar dinero.
+3. Sugerir formatos y mensajes para difundir la idea de manera atractiva.
+
+IMPORTANTE:
+• Estrategias realistas y aplicables sin presupuesto.
+• Prioriza tácticas de crecimiento orgánico y viralización.</div>
+          <button class="copy-btn" onclick="copiar('p9')">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+            Copiar Prompt
+          </button>
+        </div>
+      </details>
+
+    </div>
+  </div>
+</section>
+
+<div class="fancy-divider"></div>
+
+<!-- ── FEEDBACK ENTRE EQUIPOS ── -->
+<section class="py-24 px-6" style="background:var(--dark);">
+  <div class="max-w-6xl mx-auto">
+
+    <div class="text-center mb-16 reveal">
+      <div class="section-label">Fase K – Knowledge</div>
+      <h2 style="font-size:2.5rem; font-weight:800; color:#fff;">Feedback Entre Equipos</h2>
+      <p style="color:#8FA3B8; max-width:460px; margin:1rem auto 0; line-height:1.7;">
+        Cada grupo evalúa la propuesta de otro equipo para cerrar el ciclo de aprendizaje.
+      </p>
+    </div>
+
+    <!-- Image strip -->
+    <div class="reveal" style="border-radius:16px; overflow:hidden; height:160px; margin-bottom:3rem; position:relative;">
+      <img src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1200&q=80"
+        alt="Team Collaboration"
+        style="width:100%; height:100%; object-fit:cover; object-position:center 30%;">
+      <div style="position:absolute; inset:0; background:linear-gradient(90deg, var(--dark) 0%, transparent 20%, transparent 80%, var(--dark) 100%);"></div>
+      <div style="position:absolute; inset:0; background:rgba(6,11,20,0.5);"></div>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-7">
+
+      <div class="think-card glow-box reveal">
+        <h3 style="font-weight:700; color:#fff; margin-bottom:1rem;">Grupo 1 – Green CO₂ 🌱</h3>
+        <div class="feedback-arrow">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          Evalúa: Idea Grupo 2
+        </div>
+      </div>
+
+      <div class="think-card glow-box reveal">
+        <h3 style="font-weight:700; color:#fff; margin-bottom:1rem;">Grupo 2 – Expansión Internacional 🌎</h3>
+        <div class="feedback-arrow">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          Evalúa: Idea Grupo 3
+        </div>
+      </div>
+
+      <div class="think-card glow-box reveal">
+        <h3 style="font-weight:700; color:#fff; margin-bottom:1rem;">Grupo 3 – Transformación Tecnológica 🚀</h3>
+        <div class="feedback-arrow">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          Evalúa: Idea Grupo 4
+        </div>
+      </div>
+
+      <div class="think-card glow-box reveal">
+        <h3 style="font-weight:700; color:#fff; margin-bottom:1rem;">Grupo 4 – Upsell Backup hacia IA 🤖</h3>
+        <div class="feedback-arrow">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          Evalúa: Idea Grupo 1
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ── FOOTER ── -->
+<footer style="background:#030710; border-top:1px solid var(--border); padding:2.5rem 2rem; text-align:center;">
+  <div style="font-family:'Syne',sans-serif; font-weight:800; font-size:1.5rem; color:#fff; margin-bottom:0.5rem;">
+    AI <span style="color:var(--cyan);">T.H.I.N.K</span>
+  </div>
+  <p style="font-size:0.82rem; color:#3A4F65;">Tune · Hypothesis · Implement · Network · Knowledge</p>
+</footer>
+
+<script>
+function copiar(id) {
+  let texto = document.getElementById(id).innerText;
+  navigator.clipboard.writeText(texto).then(() => {
+    const btn = document.querySelector(`[onclick="copiar('${id}')"]`);
+    const original = btn.innerHTML;
+    btn.innerHTML = '✓ Copiado';
+    btn.style.background = 'linear-gradient(135deg,#00D9FF,#00D9FF)';
+    setTimeout(() => { btn.innerHTML = original; btn.style.background = ''; }, 2000);
+  });
+}
+
+// Scroll reveal
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if(e.isIntersecting) { e.target.classList.add('visible'); } });
+}, { threshold: 0.1 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>
